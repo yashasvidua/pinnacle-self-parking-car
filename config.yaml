@@ -39,6 +39,7 @@ detection:
     hough_threshold: 40
     hough_min_line_len: 30
     hough_max_line_gap: 10
+    tape_width_cm: 2.5     # subtracted from the outer-edge fit to get the tape centre-line size
   aruco:
     dictionary: DICT_4X4_50
     corner_ids: [0, 1, 2, 3]   # entrance-left, entrance-right, back-right, back-left
@@ -54,6 +55,7 @@ bay:
   length_cm: 50
   width_cm: 26
   length_tol_cm: 8        # accepted deviation of the detected bay length
+  width_tol_cm: 6
 
 fusion:
   side_clear_cm: 30       # side sonar reading above this (or -1) = gap is open
