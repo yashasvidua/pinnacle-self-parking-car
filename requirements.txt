@@ -1,0 +1,9 @@
+# Python 3.10+. Install only opencv-contrib-python (it includes cv2.aruco);
+# do not install opencv-python alongside it.
+opencv-contrib-python==4.10.0.84
+numpy>=1.24,<2.1
+flask>=3.0,<4
+requests>=2.31
+ruamel.yaml>=0.18
+python-dotenv>=1.0
+pytest>=8.0

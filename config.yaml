@@ -1,0 +1,98 @@
+# Pinacle laptop configuration. Units: cm, degrees, seconds unless noted.
+# Network addresses can be overridden from .env (CAM_URL, DEVKIT_IP).
+
+network:
+  cam_url: "http://192.168.43.100/stream"   # ESP32-CAM MJPEG stream
+  devkit_ip: "192.168.43.101"               # ESP32 DevKit
+  cmd_port: 4210          # laptop -> DevKit
+  telem_port: 4211        # DevKit -> laptop
+  heartbeat_hz: 10
+  telemetry_timeout_s: 1.0   # FIND & PARK needs telemetry newer than this
+
+camera:
+  live_timeout_s: 1.0     # stream counts as live if a frame arrived within this
+  reconnect_s: 1.0
+  sim_video: "laptop/sim/sample.mp4"   # used by --sim; a synthetic feed is generated if missing
+
+calibration:
+  # Filled in by the dashboard calibration page. Car frame: origin under the front
+  # bumper centre, +x forward, +y left (cm).
+  image_points: null      # [[u, v], x4] in px
+  world_points_cm: null   # [[x, y], x4] in cm
+  homography: null        # 3x3, image px -> floor cm
+  birdseye:
+    x_min_cm: 0
+    x_max_cm: 150
+    y_min_cm: -75
+    y_max_cm: 75
+    px_per_cm: 3
+
+detection:
+  method: tape            # tape | aruco
+  min_confidence: 0.5
+  smooth_alpha: 0.5       # EMA on the bay pose between frames
+  tape:
+    hsv_low: [0, 0, 180]      # white tape by default
+    hsv_high: [180, 60, 255]
+    canny_low: 50
+    canny_high: 150
+    hough_threshold: 40
+    hough_min_line_len: 30
+    hough_max_line_gap: 10
+  aruco:
+    dictionary: DICT_4X4_50
+    corner_ids: [0, 1, 2, 3]   # entrance-left, entrance-right, back-right, back-left
+
+car:
+  length_cm: 30
+  width_cm: 18
+  max_pwm: 255
+  min_pwm: 90             # below this the BO motors stall
+
+bay:
+  side: right             # which side of the car the bay is on: left | right
+  length_cm: 50
+  width_cm: 26
+  length_tol_cm: 8        # accepted deviation of the detected bay length
+
+fusion:
+  side_clear_cm: 30       # side sonar reading above this (or -1) = gap is open
+  min_gap_margin_cm: 8    # required gap length = car length + this
+  wall_max_cm: 60         # side readings below this count as a parked obstacle
+
+planner:
+  drive_pwm: 150
+  reverse_pwm: 130
+  pull_past_cm: 12        # how far the car centre goes past the bay centre before rotating
+  rotate_deg: 90
+  reverse_stop_cm: 10     # stop reversing when the rear sensors read this
+  reverse_max_cm: 40
+  centre_tol_cm: 2
+  centre_pwm: 110
+  pwm_per_cm_s: 4.0       # rough calibration: PWM / (cm/s), for timed moves
+
+fsm:
+  search_pwm: 120
+  search_timeout_s: 20
+  align_tol_deg: 5
+  align_tol_cm: 5
+  measure_frames: 10
+  step_timeout_s: 8
+  adjust_max_iters: 4
+
+manual:
+  default_speed: 160
+  repeat_ms: 100          # dashboard repeats held commands this often
+  deadman_ms: 250         # laptop sends S if no manual input for this long
+
+safety:
+  ui_heartbeat_s: 1.0     # AUTO aborts if the dashboard goes silent this long
+
+web:
+  host: "0.0.0.0"
+  port: 5000
+  jpeg_quality: 70
+
+logging:
+  dir: logs
+  record_dir: recordings
