@@ -1,0 +1,40 @@
+# Secrets
+.env
+secrets.h
+**/secrets.h
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Arduino / PlatformIO
+build/
+*.bin
+*.elf
+*.hex
+*.map
+.pio/
+.vscode/
+debug.cfg
+debug_custom.json
+*.svd
+
+# Runtime output
+logs/
+recordings/
+*.avi
+*.mp4
+!laptop/sim/*.mp4
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
