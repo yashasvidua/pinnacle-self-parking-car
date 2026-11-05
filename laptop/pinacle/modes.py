@@ -48,7 +48,7 @@ def find_park_enabled(telem_age_s: float, cam_live: bool, homography_loaded: boo
     """
     timeout = float(cfg.get("network", {}).get("telemetry_timeout_s", 1.0))
     missing = []
-    if telem_age_s is None or math.isnan(telem_age_s) or telem_age_s > timeout:
+    if telem_age_s is None or math.isnan(telem_age_s) or telem_age_s >= timeout:
         missing.append("no DevKit telemetry")
     if not cam_live:
         missing.append("camera not live")
