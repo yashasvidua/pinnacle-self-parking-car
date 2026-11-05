@@ -153,3 +153,53 @@ def test_stop_cancels_rotation(make_car):
     lap.send("S,{seq}")
     time.sleep(0.05)
     assert not car.busy
+
+
+def _states_while(lap, line, seconds):
+    """Send `line` every 50 ms and collect the telemetry states seen."""
+    states = []
+    end = time.monotonic() + seconds
+    while time.monotonic() < end:
+        lap.send(line)
+        t = lap.telem()
+        if t:
+            states.append(t["state"])
+    return states
+
+
+def test_estop_on_rotation_stays_latched_like_firmware(make_car):
+    wall = rect_segments(20.0, -50.0, 25.0, 50.0)  # ~5 cm in front of the bumper
+    car, lap = make_car(world=wall)
+    keep_alive(lap, "H,{seq}", 0.3)
+    lap.send("R,{seq},90.0")
+    states = _states_while(lap, "H,{seq}", 0.6)   # H must not release the latch
+    assert states and all(s == "ESTOP" for s in states[1:])
+    assert car.busy is False                      # ESTOP cancelled the rotation
+    lap.send("S,{seq}")                           # a new command releases it
+    keep_alive(lap, "H,{seq}", 0.2)
+    assert car.report_state() == "OK"
+
+
+def test_blocked_spin_command_is_held(make_car):
+    wall = rect_segments(20.0, -50.0, 25.0, 50.0)
+    car, lap = make_car(world=wall)
+    states = _states_while(lap, "C,{seq},-150,150", 0.8)
+    assert states[-3:] == ["ESTOP"] * 3
+
+
+def test_boots_in_watchdog_and_median_seeded():
+    car = FakeCar(cmd_port=0, telem_port=0, bind_ip="127.0.0.1", verbose=0, world=[])
+    assert car.report_state() == "WATCHDOG"
+    assert car._filtered([10.0, 10.0, 10.0, 10.0, 10.0, 10.0]) == [-1.0] * 6
+
+
+@pytest.mark.parametrize("line", ["C, 1, 2, 3", "C,+1,2,3", "C,1_0,2,3", "R,1,0x10", "C,1,2,3\nS,2", "R,1,nan"])
+def test_strict_parser_rejects(line):
+    car = FakeCar(cmd_port=0, telem_port=0, bind_ip="127.0.0.1", verbose=0, world=[])
+    assert car.handle_line(line) is False
+
+
+@pytest.mark.parametrize("line", ["C,1,-255,255\n", "S,7", "H,0", "R,3,-90.5", "R,3,45"])
+def test_strict_parser_accepts(line):
+    car = FakeCar(cmd_port=0, telem_port=0, bind_ip="127.0.0.1", verbose=0, world=[])
+    assert car.handle_line(line) is True

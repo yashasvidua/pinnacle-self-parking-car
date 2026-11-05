@@ -29,6 +29,7 @@ import argparse
 import json
 import logging
 import math
+import re
 import socket
 import statistics
 import sys
@@ -36,6 +37,10 @@ import threading
 import time
 from dataclasses import dataclass, field
 from typing import Optional
+
+# Strict grammar, same as the firmware parser: no spaces, decimal only.
+_LINE_RE = re.compile(
+    r"^(?:C,(\d+),([+-]?\d+),([+-]?\d+)|([SH]),(\d+)|R,(\d+),([+-]?(?:\d+\.?\d*|\.\d+)))$")
 
 log = logging.getLogger("fake_car")
 
@@ -120,8 +125,9 @@ class CarState:
     rot_open_loop: bool = False
     estop: bool = False
     estop_dir: str = ""      # "fwd" | "rev" | "rot"
-    watchdog: bool = False
-    history: dict = field(default_factory=lambda: {k: [] for k in SENSOR_ORDER})
+    estop_hold_rot: bool = False  # an R was cancelled by ESTOP: stay latched until C/S/R
+    watchdog: bool = True    # like the firmware: WATCHDOG until the first valid packet
+    history: dict = field(default_factory=lambda: {k: [-1.0] * 3 for k in SENSOR_ORDER})
 
 
 class FakeCar:
@@ -212,7 +218,7 @@ class FakeCar:
         with self.lock:
             self.state.x, self.state.y, self.state.heading = x, y, heading
             for h in self.state.history.values():
-                h.clear()
+                h[:] = [-1.0] * 3
 
     @property
     def busy(self) -> bool:
@@ -231,31 +237,27 @@ class FakeCar:
     def handle_line(self, line: str, now: Optional[float] = None) -> bool:
         """Apply one command line. Returns False (and ignores it) if malformed."""
         now = time.monotonic() if now is None else now
-        parts = line.strip().split(",")
-        try:
-            kind = parts[0]
-            if kind == "C" and len(parts) == 4:
-                seq, left, right = int(parts[1]), int(parts[2]), int(parts[3])
-            elif kind in ("S", "H") and len(parts) == 2:
-                seq = int(parts[1])
-            elif kind == "R" and len(parts) == 3:
-                seq, deg = int(parts[1]), float(parts[2])
-                if not math.isfinite(deg):
-                    raise ValueError
-            else:
-                raise ValueError
-            if seq < 0:
-                raise ValueError
-        except (ValueError, IndexError):
+        line = line.rstrip("\r\n")
+        parts = line.split(",")
+        m = _LINE_RE.match(line)
+        if not m:
             self.rx_counts["bad"] += 1
             return False
 
+        kind = parts[0]
+        seq = int(parts[1])
+        if kind == "C":
+            left, right = int(parts[2]), int(parts[3])
+        elif kind == "R":
+            deg = float(parts[2])
         with self.lock:
             st = self.state
             self.last_rx_t = now
             self.last_seq = seq
             st.watchdog = False
             self.rx_counts[kind] += 1
+            if kind in ("C", "S", "R"):
+                st.estop_hold_rot = False
             if kind == "C":
                 self._cancel_rotation()  # first, it zeroes the motors
                 st.cmd_left = max(-255, min(255, left))
@@ -354,6 +356,8 @@ class FakeCar:
     def _update_estop(self) -> None:
         st = self.state
         direction = self._direction(st.cmd_left, st.cmd_right)
+        if not direction and st.estop_hold_rot:
+            direction = "rot"
         d = self.distances
         if st.estop:
             if direction != st.estop_dir:          # zero or away from the obstacle
@@ -363,10 +367,14 @@ class FakeCar:
         if not st.estop and direction and self._blocked(direction, d, ESTOP_CM):
             st.estop = True
             st.estop_dir = direction
-            self._cancel_rotation()
-            if direction == "rot":
-                st.cmd_left = st.cmd_right = 0
             self._say(1, f"HARD STOP ({direction}) d={d[:4]}")
+        # ESTOP cancels any rotation (also one started while already latched);
+        # a blocked C is held and resumes once the path clears, like the firmware.
+        if st.estop and st.rot_end_t is not None:
+            self._cancel_rotation()
+            st.estop_hold_rot = True
+        if not st.estop:
+            st.estop_hold_rot = False
 
     def _step(self, now: float, dt: float) -> None:
         st = self.state
@@ -435,9 +443,8 @@ class FakeCar:
                 text = data.decode("ascii")
             except UnicodeDecodeError:
                 continue
-            for line in text.splitlines() or [""]:
-                if line.strip() and self.handle_line(line):
-                    self.dest_ip = addr[0]
+            if self.handle_line(text):
+                self.dest_ip = addr[0]
 
     def _sim_loop(self) -> None:
         last = time.monotonic()
