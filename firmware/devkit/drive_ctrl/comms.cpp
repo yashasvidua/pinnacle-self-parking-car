@@ -106,6 +106,7 @@ static bool parseFloat(const char*& p, float& out) {
   const char* q = p;
   if (*q == '+' || *q == '-') q++;
   if (!isdigit((unsigned char)*q) && *q != '.') return false;  // rejects "nan", "inf", ""
+  if (q[0] == '0' && (q[1] == 'x' || q[1] == 'X')) return false;  // no hex floats
   char* end;
   float v = strtof(p, &end);
   if (end == p || !isfinite(v)) return false;

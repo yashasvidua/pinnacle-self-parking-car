@@ -355,10 +355,11 @@ void loop() {
     g_estopDir = dir;
     Serial.printf("[estop] HARD STOP (%s) d=[%.1f,%.1f,%.1f,%.1f]\n", dirName(dir),
                   sonarGet(S_FL), sonarGet(S_FR), sonarGet(S_BL), sonarGet(S_BR));
-    if (g_rotActive) {
-      cancelRotation("ESTOP");
-      g_estopHoldRot = true;
-    }
+  }
+  // ESTOP cancels any rotation, including an R that arrives while already latched.
+  if (g_estop && g_rotActive) {
+    cancelRotation("ESTOP");
+    g_estopHoldRot = true;
   }
   if (!g_estop) g_estopHoldRot = false;
 
