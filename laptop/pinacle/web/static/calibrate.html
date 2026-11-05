@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1a2027">
+  <title>Pinacle Calibration</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">PINACLE <small>calibration</small></div>
+    <span id="calibBadge" class="badge">…</span>
+    <nav><a href="/">&larr; Dashboard</a></nav>
+  </header>
+
+  <main class="calib-layout">
+    <section>
+      <div class="calib-canvas-wrap">
+        <canvas id="calibCanvas" width="640" height="480" aria-label="Frozen camera frame, click 4 floor marks"></canvas>
+      </div>
+      <div class="btnrow" style="margin-top:10px">
+        <button id="freeze" class="btn" type="button">Freeze new frame</button>
+        <button id="undo" class="btn" type="button">Undo last point</button>
+        <button id="clear" class="btn" type="button">Clear points</button>
+        <button id="loadCurrent" class="btn" type="button">Load current calibration</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>How to calibrate</h2>
+      <p class="hint">Put 4 marks on the floor in view of the camera (not all on one line), measure each
+        in the <b>car frame</b>: <b>x</b> = cm forward from the front bumper, <b>y</b> = cm to the
+        left (right is negative). Click the marks in the image in the same order, enter x,y, save.</p>
+      <table class="pts">
+        <thead><tr><th>#</th><th>pixel (u, v)</th><th>x cm</th><th>y cm</th></tr></thead>
+        <tbody id="ptsBody"></tbody>
+      </table>
+      <div class="btnrow" style="margin-top:12px">
+        <button id="save" class="btn primary" type="button" disabled>Save calibration</button>
+      </div>
+      <div id="result" class="result" style="margin-top:12px" hidden></div>
+    </section>
+  </main>
+  <script src="/static/calib.js"></script>
+</body>
+</html>

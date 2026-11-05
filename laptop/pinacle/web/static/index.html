@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#1a2027">
+  <title>Pinacle Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div id="offline" class="offline-banner" hidden>Dashboard server unreachable</div>
+  <header class="topbar">
+    <div class="brand">PINACLE<small id="simTag" hidden>SIM</small></div>
+    <span id="modeBadge" class="badge">MANUAL</span>
+    <span id="stateBadge" class="badge">IDLE</span>
+    <nav><a href="/calibrate">Calibrate</a></nav>
+  </header>
+
+  <main class="layout">
+    <section class="card video-card">
+      <img id="video" src="/video" alt="Live camera with detection overlay">
+      <div id="toast" class="toast" hidden></div>
+    </section>
+
+    <section class="card controls" aria-label="Controls">
+      <button id="estop" class="estop" type="button">E-STOP</button>
+
+      <div class="park">
+        <button id="findPark" type="button" disabled>FIND &amp; PARK</button>
+        <div id="parkReason" class="reason">Waiting for status…</div>
+      </div>
+
+      <div class="pad" aria-label="Manual drive (hold)">
+        <button class="drive" type="button" data-cmd="rotate_left" title="Rotate left (Q)">&#10226;<span>Q</span></button>
+        <button class="drive" type="button" data-cmd="forward" title="Forward (W)">&#9650;<span>W</span></button>
+        <button class="drive" type="button" data-cmd="rotate_right" title="Rotate right (E)">&#10227;<span>E</span></button>
+        <button class="drive" type="button" data-cmd="left" title="Turn left (A)">&#9664;<span>A</span></button>
+        <div class="pad-centre" id="cmdIndicator">STOP</div>
+        <button class="drive" type="button" data-cmd="right" title="Turn right (D)">&#9654;<span>D</span></button>
+        <div></div>
+        <button class="drive" type="button" data-cmd="back" title="Back (S)">&#9660;<span>S</span></button>
+        <div></div>
+      </div>
+
+      <label class="speed">Speed
+        <input id="speed" type="range" min="90" max="255" step="5" value="160">
+        <output id="speedVal">160</output>
+      </label>
+      <p class="hint">Hold to drive. Keys: <b>W A S D</b> drive, <b>Q / E</b> rotate, <b>SPACE</b> e-stop.
+        Any manual input during FIND &amp; PARK takes over.</p>
+    </section>
+
+    <section class="card status" aria-label="Status">
+      <h2>Status</h2>
+      <div class="status-grid">
+        <svg class="cardiagram" viewBox="0 0 220 280" role="img" aria-label="Ultrasonic distances around the car">
+          <rect class="body" x="80" y="70" width="60" height="140" rx="10"></rect>
+          <rect class="front" x="84" y="72" width="52" height="8" rx="3"></rect>
+          <text class="lbl" x="110" y="140">FRONT ▲</text>
+          <g id="s-fl"><rect class="pill" x="52" y="20" width="56" height="26" rx="13"></rect><text x="80" y="33">—</text><text class="lbl" x="80" y="56">FL</text></g>
+          <g id="s-fr"><rect class="pill" x="112" y="20" width="56" height="26" rx="13"></rect><text x="140" y="33">—</text><text class="lbl" x="140" y="56">FR</text></g>
+          <g id="s-bl"><rect class="pill" x="52" y="234" width="56" height="26" rx="13"></rect><text x="80" y="247">—</text><text class="lbl" x="80" y="224">BL</text></g>
+          <g id="s-br"><rect class="pill" x="112" y="234" width="56" height="26" rx="13"></rect><text x="140" y="247">—</text><text class="lbl" x="140" y="224">BR</text></g>
+          <g id="s-l"><rect class="pill" x="8" y="127" width="56" height="26" rx="13"></rect><text x="36" y="140">—</text><text class="lbl" x="36" y="162">L</text></g>
+          <g id="s-r"><rect class="pill" x="156" y="127" width="56" height="26" rx="13"></rect><text x="184" y="140">—</text><text class="lbl" x="184" y="162">R</text></g>
+        </svg>
+        <dl class="kv">
+          <dt>Mode</dt><dd id="kMode">—</dd>
+          <dt>State</dt><dd id="kState">—</dd>
+          <dt>Step</dt><dd id="kStep">—</dd>
+          <dt>Reason</dt><dd id="kReason">—</dd>
+          <dt>DevKit</dt><dd id="kDevkit">—</dd>
+          <dt>Camera</dt><dd id="kCamera">—</dd>
+          <dt>Calibration</dt><dd id="kCalib">—</dd>
+          <dt>Yaw</dt><dd id="kYaw">—</dd>
+          <dt>Detection</dt><dd id="kDet">—</dd>
+          <dt>Gap</dt><dd id="kGap">—</dd>
+          <dt>Last cmd</dt><dd id="kCmd">—</dd>
+        </dl>
+      </div>
+      <ol id="history" class="history" reversed></ol>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>
