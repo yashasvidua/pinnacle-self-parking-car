@@ -81,6 +81,9 @@ fsm:
   measure_frames: 10
   step_timeout_s: 8
   adjust_max_iters: 4
+  settle_s: 0.4           # pause after each maneuver step
+  sonar_latency_s: 0.3    # stop reversing this much early (median filter + 10 Hz telemetry lag)
+  align_gain: 3.0         # PWM per degree of heading error while aligning
 
 manual:
   default_speed: 160
