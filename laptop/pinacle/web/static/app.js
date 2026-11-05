@@ -136,6 +136,7 @@ window.addEventListener("keydown", (e) => {
 
 window.addEventListener("keyup", (e) => {
   const key = e.key.toLowerCase();
+  if (key === " " || e.code === "Space") { e.preventDefault(); return; }  // no button "click" on release
   if (!DRIVE_KEYS.has(key)) return;
   keysDown.delete(key);
   drive.keys = keysToCmd();
@@ -158,8 +159,10 @@ function estop() {
 $("estop").addEventListener("pointerdown", (e) => { e.preventDefault(); estop(); });
 $("estop").addEventListener("keydown", (e) => { if (e.key === "Enter") estop(); });
 
-$("findPark").addEventListener("click", async () => {
-  releaseAll();
+$("findPark").addEventListener("click", async (e) => {
+  e.currentTarget.blur();  // so a later SPACE (e-stop) can't "click" it again
+  // Any manual input (even a stop) during AUTO aborts it, so never send one here.
+  if (drive.active) { toast("Release the drive controls first"); return; }
   const { status, data } = await post("/api/find_park");
   if (status === 409) toast("Cannot start: " + (data.reason || "not ready"));
   else if (status === 200) toast("FIND & PARK started");
